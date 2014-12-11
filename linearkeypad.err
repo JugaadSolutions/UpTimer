@@ -1,0 +1,8 @@
+Error[1105] D:\jo\Ideonics\Repository\UpTimer\source\linearkeypad.c 298 : symbol 'KEYPAD_PORT_0' has not been defined
+Error[1105] D:\jo\Ideonics\Repository\UpTimer\source\linearkeypad.c 299 : symbol 'KEYPAD_PORT_1' has not been defined
+Error[1105] D:\jo\Ideonics\Repository\UpTimer\source\linearkeypad.c 300 : symbol 'KEYPAD_PORT_2' has not been defined
+Error[1105] D:\jo\Ideonics\Repository\UpTimer\source\linearkeypad.c 301 : symbol 'KEYPAD_PORT_3' has not been defined
+Error[1105] D:\jo\Ideonics\Repository\UpTimer\source\linearkeypad.c 302 : symbol 'KEYPAD_PORT_4' has not been defined
+Error[1105] D:\jo\Ideonics\Repository\UpTimer\source\linearkeypad.c 303 : symbol 'KEYPAD_PORT_5' has not been defined
+Error[1105] D:\jo\Ideonics\Repository\UpTimer\source\linearkeypad.c 304 : symbol 'KEYPAD_PORT_6' has not been defined
+Error[1105] D:\jo\Ideonics\Repository\UpTimer\source\linearkeypad.c 305 : symbol 'KEYPAD_PORT_7' has not been defined

@@ -47,7 +47,6 @@
 #define 	SER_RX					PORTCbits.RC7			// serial receive
 #define		SER_RX_DIR				TRISCbits.TRISC7
 
-
 // I2C Communication
 #define 	I2C_SCL					PORTCbits.RC3
 #define 	I2C_SCL_DIR 			TRISCbits.RC3
@@ -58,8 +57,6 @@
 #define		DISPLAY_PORT				PORTD	//LATD	 				// 7seg display data (DB0-DB7)
 #define 	DISPLAY_PORT_DIRECTION		TRISD
 
-
-
 // Display digit select lines
 #define		DIGIT_SEL_A					PORTAbits.RA0 			// demux digit sel A
 #define		DIGIT_SEL_A_DIRECTION		TRISAbits.TRISA0
@@ -69,16 +66,36 @@
 #define		DIGIT_SEL_C_DIRECTION		TRISAbits.TRISA2
 #define		DIGIT_SEL_D					PORTAbits.RA3			// demux digit sel D
 #define		DIGIT_SEL_D_DIRECTION		TRISAbits.TRISA3
+#define		DIGIT_SEL_E					PORTAbits.RA4			// demux digit sel D
+#define		DIGIT_SEL_E_DIRECTION		TRISAbits.TRISA4
+#define		DIGIT_SEL_F					PORTAbits.RA5			// demux digit sel D
+#define		DIGIT_SEL_F_DIRECTION		TRISAbits.TRISA5
 
 
-
+//Dot control
+#define 	DOT_CONTROL					PORTEbits.RE1			// demux digit sel D
+#define		DOT_CONTROL_DIRECTION		TRISEbits.TRISE1	
 
 // Control switches
+// Keypad Port
+#define KEYPAD_PORT_0				PORTBbits.RB0
+#define KEYPAD_PORT_0_DIRECTION		TRISBbits.TRISB0
+#define KEYPAD_PORT_1				PORTBbits.RB1
+#define KEYPAD_PORT_1_DIRECTION		TRISBbits.TRISB1
+#define KEYPAD_PORT_2				PORTBbits.RB2
+#define KEYPAD_PORT_2_DIRECTION		TRISBbits.TRISB2
+#define KEYPAD_PORT_3				PORTBbits.RB3
+#define KEYPAD_PORT_3_DIRECTION		TRISBbits.TRISB3
+#define KEYPAD_PORT_4				PORTBbits.RB4
+#define KEYPAD_PORT_4_DIRECTION		TRISBbits.TRISB4
+#define KEYPAD_PORT_5				PORTBbits.RB5
+#define KEYPAD_PORT_5_DIRECTION		TRISBbits.TRISB6
+#define KEYPAD_PORT_6				PORTBbits.RB6
+#define KEYPAD_PORT_6_DIRECTION		TRISBbits.TRISB6
+#define KEYPAD_PORT_7				PORTBbits.RB7
+#define KEYPAD_PORT_7_DIRECTION		TRISBbits.TRISB7
 
-#define		CHANGE_ON_INTR_PORT			PORTB
-#define 	CHANGE_ON_INTR_DIRECTION	TRISB
-
-//Heart Beatl
+//Heart Beat
 #define 	HEART_BEAT					PORTEbits.RE0
 #define 	HEART_BEAT_DIRECTION		TRISEbits.TRISE0
 
@@ -98,7 +115,7 @@
 
 #define DEVICE_ID			(0x01)
 
-#define SYSTEM_CLOCK			(20000000UL)	// Hz		// 20MHz external crystal  used
+#define SYSTEM_CLOCK			(32000000UL)	// Hz		// 8MHz internal oscillator
 
 //#define SYSTEM_CLOCK			(40000000UL)	// Hz		// 10MHz external crystal x4 PLL
 

@@ -27,8 +27,7 @@
 #include "rtc_driver.h"
 #include "i2c_driver.h"
 #include "digitdisplay.h"
-#include "portBInterrupts.h"
-
+#include "linearkeypad.h"
 /*
 *------------------------------------------------------------------------------
 * Private Defines
@@ -41,7 +40,7 @@
 *------------------------------------------------------------------------------
 */
 
-#pragma config OSC      = HS//PLL
+#pragma config OSC      = INTIO67
 #pragma config FCMEN    = OFF
 #pragma config IESO     = OFF
 #pragma config PWRT     = OFF
@@ -146,11 +145,8 @@ UINT8 tempBuffer[]={'3','6','2','7'};
 *
 *------------------------------------------------------------------------------
 */
-#define DIGIT_REFRESH_PERIOD	(65535 - 5000)
-#define TICK_PERIOD	(65535 - 10000)
-
-extern UINT16 heartBeatCount;
-
+#define DIGIT_REFRESH_PERIOD	(65535 - 4000)
+#define TICK_PERIOD	(65535 - 8000)
 
 void main(void)
 {
@@ -158,10 +154,9 @@ void main(void)
 	UINT8 blink = 0;
 
 	BRD_init();			//board initialization
-	portBInterruptInit();
 	InitializeRtc();	//RTC Initialization
 
-	DigitDisplay_init(4); //Digit Display initialization
+	DigitDisplay_init(6); //Digit Display initialization
 
 	TMR0_init(TICK_PERIOD,0);		//initialize timer0
 	TMR1_init(DIGIT_REFRESH_PERIOD,DigitDisplay_task);	// Timer1 initialization						//initialize timer1
@@ -169,25 +164,30 @@ void main(void)
 	APP_init();
 	EnableInterrupts();		//Interrupts initialization
 
-//	COM_init(CMD_SOP,CMD_EOP,RESP_SOP,RESP_EOP,APP_comCallBack);
-	
-	ENABLE_GLOBAL_INT();
-
-	DigitDisplay_updateBuffer(tempBuffer);
-	
 
 	while(1)
 	{
 
 	//	COM_task();
 
-	`	if(heartBeatCount >= 250 )
-		{	
-			APP_task();			
+	`	if(heartBeatCount >= 500 )
+		{			
 			HB_task();
 			heartBeatCount = 0;
 		}
 
+		if(keypadUpdate_count >= 10)
+		{
+			LinearKeyPad_scan();
+			keypadUpdate_count = 0;
+			count++;
+		}
+		
+		if(count >= 10)
+		{
+			APP_task();	
+			count = 0;
+		}
 		
 	}
 

@@ -6,18 +6,17 @@
 
 typedef enum 
 {
-	CLOCK_MODE = 0,
-	SETTING_MODE
+	RESET_STATE = 0,
+	COUNT_STATE,
+	HALT_STATE
 }APP_STATE;
 
-
-typedef enum
+typedef enum 
 {
-	MODE_CHANGE_INPUT_MASK = 0X80,
-	NEXT_INPUT_MASK = 0X40,
-	SET_INPUT_MASK = 0X20
-}MASK_INTR_DATA;
-
+	START_PB = 2,
+	STOP_PB = 3,
+	RESET_PB
+}PB;
 
 typedef enum
 {

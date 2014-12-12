@@ -535,12 +535,7 @@ void InitializeRtc(void)
 	stRtcRegs.mMinute  	= 50;							// minute = 29
 	stRtcRegs.mHour  	= 6;
 #endif
-	// Setup task to run
-#ifdef TIME_DEBUG
-	SCH_AddTask(UpdateRealTimeClockTask ,0,TASK_10MSEC_PERIOD);
-#else
-//	SCH_AddTask(UpdateRealTimeClockTask ,0,TASK_100MSEC_PERIOD);
-#endif
+
 }
 
 /*

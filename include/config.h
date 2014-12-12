@@ -19,8 +19,10 @@
 #define MMD_MAX_ADDRESS		128
 #define __MMD_STATIC__
 
+/*----------------------------------------
+*	COM module configuration
+*----------------------------------------*/
 
-//COM module configuration
 #define __BCC_XOR__
 //#define __RESPONSE_ENABLED__
 //#define __LOOP_BACK__
@@ -40,12 +42,12 @@ enum
 #define 	RX_PACKET_SIZE		(60)	
 #define 	TX_PACKET_SIZE		(60)
 
-
+/*----------------------------------------
+*	Display module configuration
+*----------------------------------------*/
 #define __DISPLAY_TEST__
-
-//#define __SIMULATION__  // keypad stimulation
-
 #define MAX_MSG 7
+//#define COMMON_CATHODE
 
 
 // Enable for external eeprom access
@@ -56,13 +58,21 @@ enum
 // Enable for hardware i2c module usage
 //#define USE_MSSP_I2C
 
+/*----------------------------------------
+*	RTC CONFIGURATION
+*----------------------------------------*/
 
-//RTC CONFIGURATION
 //#define TIME_DEBUG
 
 //#define RTC_DS1307
 
 
+/*----------------------------------------
+*	Keypad Configurations
+*----------------------------------------*/
+
+//#define __FACTORY_CONFIGURATION__
+//#define __SIMULATION__
 
 /*
 *------------------------------------------------------------------------------

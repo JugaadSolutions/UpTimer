@@ -1,9 +1,11 @@
 #include "app.h" 
+#include "linearkeypad.h"
+#include "eep.h" 
 
 
-
-#define NO_OF_DIGITS	(0X04)
-
+#define NO_OF_DIGITS	(0X06)
+#define EEPROM_STATE_ADDRESS	(0x20)
+#define EEPROM_RTC_DATA_ADDRESS (1)
 /*
 *------------------------------------------------------------------------------
 * Public Variables
@@ -12,15 +14,11 @@
 *------------------------------------------------------------------------------
 */
 
-UINT8 displayBuffer[8] = {0};
-UINT8 readTimeDateBuffer[7] = {0};
-UINT8 writeTimeDateBuffer[] = {0X01, 0X27, 0X72, 0X03, 0x027, 0X12, 0X13};
-extern BOOL portB_intFlag;
-extern UINT8 portB_currentData;
+//UINT8 readTimeDateBuffer[7] = {0};
+UINT8 writeTimeDateBuffer[] = {0X00, 0X00, 0X00, 0X01, 0x01, 0X01, 0X14};
 
 
 void APP_conversion(void);
-void APP_handlePortBInput(void);
 void APP_resetDisplayBuffer(void);
 void APP_updateRTC(void);
 
@@ -32,21 +30,15 @@ void APP_updateRTC(void);
 typedef struct _App
 {
 	APP_STATE state;
-	BOOL dotOn;
+	
+	UINT8 displayBuffer[NO_OF_DIGITS];
+	UINT8 readTimeDateBuffer[7];
+	UINT8 writeTimeDateBuffer[7];
 
-	UINT8 currentState; // stores current state
-	UINT8 previousState;
-	UINT8 currentNextInput; // stores the value of NEXT digit to be changed
-	UINT8 previousNextInput;
-	UINT8 currentSetInput; // stores the value of digit to be set
-	UINT8 previousSetInput;
-
-	BOOL nextInputValue; // stores input value as 1
-	UINT8 blinkIndex;
 }APP;
 
 #pragma idata app_data
-APP app = {0, 0, 0};
+APP app = {0};
 #pragma idata
 
 
@@ -63,16 +55,44 @@ APP app = {0, 0, 0};
 */
 void APP_init( void )
 {
+	UINT8 i;
 	//writeTimeDateBuffer[2] = SetHourMode(0X03,1,1);
 	//Set Date and Time
 
+/*	for( i = 0; i < NO_OF_DIGITS+1; i++ )
+	{
+		writeTimeDateBuffer[i] = 0;
+	}
+*/
 
-	//WriteRtcTimeAndDate(writeTimeDateBuffer);
-	app.state = CLOCK_MODE;
+	app.state = Read_b_eep (EEPROM_STATE_ADDRESS); 
+	Busy_eep();	
 
-	app.previousState = 0XFF;
-	app.previousNextInput = 0XFF;
-	app.previousSetInput = 0XFF;
+	switch(app.state)
+	{
+		case RESET_STATE:
+			//Turn off Dot
+			DOT_CONTROL = 0;
+
+			//Reset Display;
+			APP_resetDisplayBuffer( );
+			DigitDisplay_updateBuffer(app.displayBuffer);
+			
+		break;
+
+		case HALT_STATE:
+			for( i = 0; i < NO_OF_DIGITS; i++ )
+			{
+				app.displayBuffer[i] = Read_b_eep(EEPROM_RTC_DATA_ADDRESS+i);
+				Busy_eep();	
+			}
+			DigitDisplay_updateBuffer(app.displayBuffer);
+		break;
+
+		default:
+		break;
+	}
+
 }
 
 
@@ -91,162 +111,124 @@ void APP_init( void )
 
 void APP_task( void )
 {
-	if(portB_intFlag == 1)
-	{
-		ENTER_CRITICAL_SECTION();  //turn OFF all interrupts
-		APP_handlePortBInput();	
-		portB_intFlag = 0;
-		EXIT_CRITICAL_SECTION();   //turn ON all interrupts
-	}
-	
 	switch ( app.state )	
 	{
-		case CLOCK_MODE: 
-					//UINT8 temp[4] = { '1','3','5','7'};
-					ReadRtcTimeAndDate(readTimeDateBuffer);  //Read the data from RTC
-					APP_conversion(); // Separate the higher and lower nibble and store it into the display buffer 
-					
-								
-					if( app.dotOn == 0 )
-					{
-						//DigitDisplay_updateBuffer(temp);		
-						DigitDisplay_updateBuffer(displayBuffer);
-						app.dotOn = 1;
-					}
-					else 
-					{
-						//DigitDisplay_updateBuffer(temp);
-						DigitDisplay_updateBuffer(displayBuffer);
-						DigitDisplay_DotOn(1, 2);					//Selecting number of displays to display dot 
-						app.dotOn = 0;	
-					}
+		case RESET_STATE:
+			if ((LinearKeyPad_getKeyState(START_PB) == 1))
+			{
+				//Reset RTC ;
+				APP_resetDisplayBuffer( );
+				WriteRtcTimeAndDate(writeTimeDateBuffer);
+	
+				//store the state in EEPROM
+				Write_b_eep( EEPROM_STATE_ADDRESS , COUNT_STATE );
+				Busy_eep( );
+				app.state = COUNT_STATE;	
+	
+				//Turn on Dot
+				DOT_CONTROL = 1;
+			}
+	
 		break;
-		
-		case SETTING_MODE:
-					DigitDisplay_blinkOn_ind(500, app.blinkIndex);
-					if(app.nextInputValue)						// if next input value = 1
-					{
-						switch(app.blinkIndex)
-						{
-							case MINUTES_LSB: 
-									displayBuffer[0]++;
-									if(displayBuffer[0] > MINUTES_LSB_MAX)
-										displayBuffer[0] = '0';
-							break;
-		
-							case MINUTES_MSB:
-									displayBuffer[1]++;
-									if(displayBuffer[1] > MINUTES_MSB_MAX)
-										displayBuffer [1] = '0';
-							break;
-							case HOURS_LSB: 
-									displayBuffer[2]++;
-									if(displayBuffer[2] > HOURS_LSB_MAX)
-										displayBuffer[2] = '0';
-							break;
-		
-							case HOURS_MSB:
-									displayBuffer[3]++;
-									if(displayBuffer[3] > HOURS_MSB_MAX)
-										displayBuffer[3] = '0';
-							break;
-										
-							default:
-							break;
-						}				
-						
-						DigitDisplay_updateBuffer(displayBuffer);
-						app.nextInputValue = 0;
-					}
-					
-					break;
-	}	
+	
+		case COUNT_STATE: 
+			if ((LinearKeyPad_getKeyState(STOP_PB) == 1))
+			{
+				UINT8 i;
+	
+				//Store current data into EEPROM
+				for( i = 0; i < NO_OF_DIGITS; i++ )
+				{
+					Write_b_eep( EEPROM_RTC_DATA_ADDRESS+i , app.displayBuffer[i] );
+					Busy_eep( );
+				}
+
+				//Change the state
+				Write_b_eep( EEPROM_STATE_ADDRESS , HALT_STATE );
+				Busy_eep( );
+	
+				app.state = HALT_STATE;	
+				break;
+			}
+	
+			ReadRtcTimeAndDate(app.readTimeDateBuffer);  //Read the data from RTC
+			APP_conversion(); // Separate the higher and lower nibble and store it into the display buffer 
+			DigitDisplay_updateBuffer(app.displayBuffer); //Write data to display buffer
+		break;
+	
+		case HALT_STATE:
+			if ((LinearKeyPad_getKeyState(START_PB) == 1))
+			{
+				//Reset RTC;
+				APP_resetDisplayBuffer( );
+				WriteRtcTimeAndDate(writeTimeDateBuffer);
+				
+				//store the state in EEPROM
+				Write_b_eep( EEPROM_STATE_ADDRESS , COUNT_STATE );
+				Busy_eep( );
+				app.state = COUNT_STATE;	
+				break;
+			}
+	
+			if ((LinearKeyPad_getKeyState(RESET_PB) == 1))
+			{
+				//Reset Display;
+				APP_resetDisplayBuffer( );
+				DigitDisplay_updateBuffer(app.displayBuffer);;
+				
+				//store the state in EEPROM
+				Write_b_eep( EEPROM_STATE_ADDRESS , RESET_STATE );
+				Busy_eep( );
+				app.state = RESET_STATE;	
+
+				//Turn off Dot
+				DOT_CONTROL = 0;
+
+				break;
+			}
+	
+	
+			//DigitDisplay_updateBuffer(app.displayBuffer);
+		break;
+	
+		default:
+		break;
+
+	}
+
 }		
 
 
-/*
-*------------------------------------------------------------------------------
-* void APP_handlePortBInput(void)
-*
-* Summary	: 
-*
-* Input		: None
-*
-* Output	: None
-*------------------------------------------------------------------------------
-*/
-void APP_handlePortBInput(void)
-{	
-	app.currentState = portB_currentData & MODE_CHANGE_INPUT_MASK; // mask the PORTB data to get current state value
-	if(app.previousState != app.currentState)			// check for the state change
-	{
-		if(app.state == CLOCK_MODE)			// if in clock mode
-		{
-			APP_resetDisplayBuffer();       //reset all digits
-			DigitDisplay_updateBuffer(displayBuffer);
-			app.nextInputValue = 0;
-			app.blinkIndex = 0;				// make blink Index 0
-			app.state = SETTING_MODE;		// change app state to clock setting mode
-			app.previousNextInput = portB_currentData & NEXT_INPUT_MASK; // mask the PORTB data to get current next input value
-			app.previousSetInput = portB_currentData & SET_INPUT_MASK; // mask the PORTB data to get current next input value	
-		}
-		else
-		{
-			APP_updateRTC();				//update RTC
-			DigitDisplay_blinkOff( );		//blink off
-			app.state = CLOCK_MODE;			// change app state to clock mode
-		}
-			
-		app.previousState = app.currentState;		//set the current state value 
-	}
-	
-	if(app.state == SETTING_MODE)	
-	{
-		app.currentNextInput = portB_currentData & NEXT_INPUT_MASK; // mask the PORTB data to get current next input value
-		app.currentSetInput = portB_currentData & SET_INPUT_MASK;	// mask the PORTB data to get current set input value
 
-		 if(app.previousNextInput != app.currentNextInput)	// check for the next input change
-		{
-			app.nextInputValue = 1;
-			app.previousNextInput = app.currentNextInput;
-		}
-		
-		else if(app.previousSetInput != app.currentSetInput)	// check for change in set input
-		{
-			app.blinkIndex++;
-			
-			if(app.blinkIndex > 3)
-				app.blinkIndex = 0;
-			
-			app.previousSetInput = app.currentSetInput;
-		}
-	}
-}
 
 void APP_conversion(void)
 {
-	displayBuffer[0] = (readTimeDateBuffer[1] & 0X0F) + '0';        //Minute LSB
-	displayBuffer[1] = ((readTimeDateBuffer[1] & 0XF0) >> 4) + '0'; //Minute MSB
-	displayBuffer[2] = (readTimeDateBuffer[2] & 0X0F) + '0';		//Hour LSB
-	displayBuffer[3] = ((readTimeDateBuffer[2] & 0X30) >> 4) + '0'; //Hour MSB
+	UINT8 temp = 0;
+
+	//Store the day
+	temp = app.readTimeDateBuffer[3];
+	temp -= 1;
+
+	//Multiply with max hours
+	temp = temp * 24;
+	temp += app.readTimeDateBuffer[2];
+
+	app.displayBuffer[0] = (app.readTimeDateBuffer[0] & 0X0F) + '0';        //Seconds LSB
+	app.displayBuffer[1] = ((app.readTimeDateBuffer[0] & 0XF0) >> 4) + '0'; //Seconds MSB
+	app.displayBuffer[2] = (app.readTimeDateBuffer[1] & 0X0F) + '0';        //Minute LSB
+	app.displayBuffer[3] = ((app.readTimeDateBuffer[1] & 0XF0) >> 4) + '0'; //Minute MSB
+
+	app.displayBuffer[4] = (temp%10) + '0';		//Hour LSB
+	app.displayBuffer[5] = ((temp/10) >> 4) + '0'; //Hour MSB
 }
 
 
 void APP_resetDisplayBuffer(void)
 {
-	int i ;
-	for(i = 0; i < 4; i++)			//reset all digits
+	UINT8 i , temp;
+	for(i = 0; i < NO_OF_DIGITS; i++)			//reset all digits
 	{
-		displayBuffer[i] = '0';
+		app.displayBuffer[i] = ' ';
 	}
 }	
 
-
-
-void APP_updateRTC(void)
-{
-	writeTimeDateBuffer[1] = ((displayBuffer[1] - '0') << 4) | (displayBuffer[0] - '0'); //store minutes
-	writeTimeDateBuffer[2] = ((displayBuffer[3] - '0') << 4) | (displayBuffer[2] - '0'); //store Hours
-
-	WriteRtcTimeAndDate(writeTimeDateBuffer);  //update RTC
-}		

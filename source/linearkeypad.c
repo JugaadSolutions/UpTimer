@@ -43,7 +43,7 @@ typedef struct _Key
 
 #pragma idata LKP_DATA
 UINT8 portValue[MAX_KEYS] = { 0};
-static Key keys[MAX_KEYS]={0};
+Key keys[MAX_KEYS]={0};
 #pragma idata
 
 
@@ -268,7 +268,7 @@ void getSimulatedInput()
 		return;
 	}
 */
-	if(portValue[portIndex] == 0 )
+	if(portValue[portIndex] == 0)
 		portValue[portIndex] = 1;
 	else if( portValue[portIndex] == 1 )
 		portValue[portIndex ]= 0;

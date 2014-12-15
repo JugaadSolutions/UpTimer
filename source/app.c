@@ -59,11 +59,7 @@ void APP_init( void )
 	//writeTimeDateBuffer[2] = SetHourMode(0X03,1,1);
 	//Set Date and Time
 
-/*	for( i = 0; i < NO_OF_DIGITS+1; i++ )
-	{
-		writeTimeDateBuffer[i] = 0;
-	}
-*/
+
 
 	app.state = Read_b_eep (EEPROM_STATE_ADDRESS); 
 	Busy_eep();	
@@ -116,8 +112,10 @@ void APP_task( void )
 		case RESET_STATE:
 			if ((LinearKeyPad_getKeyState(START_PB) == 1))
 			{
+				UINT8 i;
 				//Reset RTC ;
 				APP_resetDisplayBuffer( );
+			//	writeTimeDateBuffer[2] = SetHourMode(writeTimeDateBuffer[2],1,1);
 				WriteRtcTimeAndDate(writeTimeDateBuffer);
 	
 				//store the state in EEPROM
@@ -203,23 +201,34 @@ void APP_task( void )
 
 void APP_conversion(void)
 {
-	UINT8 temp = 0;
+	UINT8 temp = 0, temp1, temp2;
 
 	//Store the day
 	temp = app.readTimeDateBuffer[3];
 	temp -= 1;
 
 	//Multiply with max hours
-	temp = temp * 24;
-	temp += app.readTimeDateBuffer[2];
+//	temp = temp * 24;
+	if (temp == 1)
+		app.readTimeDateBuffer[2] += 0x24;
+	else if (temp == 2)
+		app.readTimeDateBuffer[2] += 0x48;
+	else if (temp == 3)
+		app.readTimeDateBuffer[2] += 0x72;
+	else if (temp == 4)
+		app.readTimeDateBuffer[2] += 0x96;
 
+	if((app.readTimeDateBuffer[2] == 0X99) && (app.readTimeDateBuffer[1] == 0X59) &&
+		(app.readTimeDateBuffer[0] == 0X59))
+		app.state = HALT_STATE;
+			
 	app.displayBuffer[0] = (app.readTimeDateBuffer[0] & 0X0F) + '0';        //Seconds LSB
 	app.displayBuffer[1] = ((app.readTimeDateBuffer[0] & 0XF0) >> 4) + '0'; //Seconds MSB
 	app.displayBuffer[2] = (app.readTimeDateBuffer[1] & 0X0F) + '0';        //Minute LSB
 	app.displayBuffer[3] = ((app.readTimeDateBuffer[1] & 0XF0) >> 4) + '0'; //Minute MSB
 
-	app.displayBuffer[4] = (temp%10) + '0';		//Hour LSB
-	app.displayBuffer[5] = ((temp/10) >> 4) + '0'; //Hour MSB
+	app.displayBuffer[4] = (app.readTimeDateBuffer[2] & 0X0F) + '0';		//Hour LSB
+	app.displayBuffer[5] = ((app.readTimeDateBuffer[2] & 0XF0) >> 4) + '0'; //Hour MSB
 }
 
 
